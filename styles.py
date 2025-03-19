@@ -1,3 +1,5 @@
+# CSS styling for the CSV Processor application
+STYLESHEET = """
 /* Global styles */
 QMainWindow, QWidget {
     background-color: white;
@@ -82,7 +84,6 @@ QCheckBox::indicator {
 QCheckBox::indicator:checked {
     background-color: #4285f4;
     border-color: #4285f4;
-    image: url(check.png);
 }
 
 QCheckBox::indicator:hover {
@@ -323,3 +324,4 @@ QDialog#column_export_dialog QPushButton#export_btn {
     background-color: #4285f4;
     color: white;
 }
+"""

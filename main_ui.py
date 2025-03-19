@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSize, QTimer, QRect
 from PyQt5.QtGui import QFont, QIcon, QColor, QPalette, QResizeEvent
 import main  # Import the original main.py functionality
+from styles import STYLESHEET
 
 class PolarsTableModel(QAbstractTableModel):
     def __init__(self, data=None):
@@ -89,13 +90,9 @@ class MainWindow(QMainWindow):
         # Set window to maximize on startup
         self.showMaximized()
         
-        # Load stylesheet
-        try:
-            with open("styles.css", "r") as file:
-                stylesheet = file.read()
-                self.setStyleSheet(stylesheet)
-        except Exception as e:
-            print(f"Error loading stylesheet: {str(e)}")
+        # Apply the imported stylesheet directly
+        self.setStyleSheet(STYLESHEET)
+        print("Applied stylesheet from imported STYLESHEET")
         
         # State variables
         self.csv_file = None
