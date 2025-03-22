@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                           QPushButton, QCheckBox, QScrollArea, QWidget)
+                           QPushButton, QCheckBox, QScrollArea, QWidget, QFrame)
 from PyQt5.QtCore import Qt
 
 class ExportDialog(QDialog):
@@ -25,7 +25,7 @@ class ExportDialog(QDialog):
         # Scrollable area for checkboxes
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QDialog.Box)
+        scroll_area.setFrameShape(QFrame.Box)  # Changed from QDialog.Box to QFrame.Box
         scroll_area.setMaximumHeight(300)
         
         scroll_content = QWidget()

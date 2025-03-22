@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (QVBoxLayout, QLabel, QProgressBar, QDialog)
 from PyQt5.QtCore import Qt
 
+
 class ProcessingDialog(QDialog):
     def __init__(self, parent=None, message="Processing..."):
         super().__init__(parent)
