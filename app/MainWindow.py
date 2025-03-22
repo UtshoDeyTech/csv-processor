@@ -12,6 +12,7 @@ from app.components.HeaderFrame import HeaderFrame
 from app.components.WordMatchTab import WordMatchTab
 from app.components.DuplicateTab import DuplicateTab
 from app.components.FindReplaceTab import FindReplaceTab
+from app.components.EmailValidationTab import EmailValidationTab
 from app.components.ResultsFrame import ResultsFrame
 from app.dialogs.ExportDialog import ExportDialog
 
@@ -36,6 +37,7 @@ class MainWindow(QMainWindow):
         self.output_file = None
         self.row_count = 0
         self.operations_history = []  # Track applied operations
+        self.operation_states = []  # Store dataframe states for undo
         
         # Initialize UI components
         self.header_frame = None
@@ -76,6 +78,9 @@ class MainWindow(QMainWindow):
         # Find and Replace Tab
         self.find_replace_tab = FindReplaceTab(self)
         self.tab_widget.addTab(self.find_replace_tab, "Find and Replace")
+        
+        self.email_validation_tab = EmailValidationTab(self)
+        self.tab_widget.addTab(self.email_validation_tab, "Unformatted Email")
         
         content_layout.addWidget(self.tab_widget)
         
@@ -126,8 +131,9 @@ class MainWindow(QMainWindow):
         """Load CSV file and setup UI with data"""
         self.csv_file = file_path
         
-        # Reset operations history
+        # Reset operations history and states
         self.operations_history = []
+        self.operation_states = []
         self.results_frame.update_history(self.operations_history)
         
         # Create processing dialog
@@ -149,12 +155,13 @@ class MainWindow(QMainWindow):
                 self.word_match_tab.update_columns(self.df.columns)
                 self.duplicate_tab.update_columns(self.df.columns)
                 self.find_replace_tab.update_columns(self.df.columns)
+                self.email_validation_tab.update_columns(self.df.columns)
                 
                 # Update results frame
                 self.results_frame.update_preview(self.df)
                 self.results_frame.update_status("File loaded successfully")
                 self.results_frame.update_title(f"Data Preview - {os.path.basename(file_path)}")
-                self.results_frame.enable_buttons(reset=False, download=False)
+                self.results_frame.enable_buttons(reset=False, download=False, undo=False)
             
             progress_dialog.set_progress(100)
             
@@ -186,6 +193,9 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         
         try:
+            # Save the current state for undo
+            self.operation_states.append(self.df.clone())
+            
             # Implement case-insensitive search with polars
             progress_dialog.set_progress(30)
             progress_dialog.set_message("Filtering data...")
@@ -240,7 +250,7 @@ class MainWindow(QMainWindow):
             
             self.results_frame.update_status(f"Word match applied {filter_type} {values_display} in columns: {cols_display}")
             self.results_frame.update_title("Filtered Data Preview")
-            self.results_frame.enable_buttons(reset=True, download=True)
+            self.results_frame.enable_buttons(reset=True, download=True, undo=True)
             
             progress_dialog.set_progress(100)
             
@@ -266,6 +276,9 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         
         try:
+            # Save the current state for undo
+            self.operation_states.append(self.df.clone())
+            
             # Process using the dataframe we currently have (could be filtered already)
             progress_dialog.set_progress(30)
             progress_dialog.set_message("Identifying and removing duplicates...")
@@ -301,7 +314,7 @@ class MainWindow(QMainWindow):
             self.results_frame.update_preview(self.df)
             self.results_frame.update_status(f"Removed {removed_count} duplicate rows based on columns: {cols_display}")
             self.results_frame.update_title("Processed Data Preview")
-            self.results_frame.enable_buttons(reset=True, download=True)
+            self.results_frame.enable_buttons(reset=True, download=True, undo=True)
             
             progress_dialog.set_progress(100)
             
@@ -331,6 +344,9 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         
         try:
+            # Save the current state for undo
+            self.operation_states.append(self.df.clone())
+            
             progress_dialog.set_progress(50)
             progress_dialog.set_message("Updating data...")
             QApplication.processEvents()
@@ -383,7 +399,7 @@ class MainWindow(QMainWindow):
             self.results_frame.update_preview(self.df)
             self.results_frame.update_status(op_description)
             self.results_frame.update_title("Processed Data Preview")
-            self.results_frame.enable_buttons(reset=True, download=True)
+            self.results_frame.enable_buttons(reset=True, download=True, undo=True)
             
             progress_dialog.set_progress(100)
             
@@ -399,15 +415,16 @@ class MainWindow(QMainWindow):
             self.df = self.original_df.clone()
             self.row_count = self.df.shape[0]
             
-            # Clear operations history
+            # Clear operations history and states
             self.operations_history = []
+            self.operation_states = []
             
             # Update results frame
             self.results_frame.update_history(self.operations_history)
             self.results_frame.update_preview(self.df)
             self.results_frame.update_status("Reset to original data")
             self.results_frame.update_title("Original Data Preview")
-            self.results_frame.enable_buttons(reset=False, download=False)
+            self.results_frame.enable_buttons(reset=False, download=False, undo=False)
     
     def download_result_data(self):
         """Export filtered data to CSV file"""
@@ -457,3 +474,93 @@ class MainWindow(QMainWindow):
         except Exception as e:
             progress_dialog.close()
             QMessageBox.critical(self, "Error", f"Error saving file: {str(e)}")
+            
+    def apply_email_validation_filter(self, column_name):
+        """Remove rows with invalid email formats"""
+        if self.df is None:
+            QMessageBox.warning(self, "Warning", "Please load a CSV file first")
+            return
+        
+        if not column_name:
+            QMessageBox.warning(self, "Warning", "Please select a column")
+            return
+        
+        # Show processing dialog
+        progress_dialog = ProcessingDialog(self, "Validating emails, please wait...")
+        progress_dialog.set_progress(20)
+        progress_dialog.show()
+        QApplication.processEvents()
+        
+        try:
+            # Save the current state for undo
+            self.operation_states.append(self.df.clone())
+            
+            progress_dialog.set_progress(30)
+            progress_dialog.set_message("Validating emails...")
+            QApplication.processEvents()
+            
+            # Store row count before filtering
+            before_count = self.df.shape[0]
+            
+            # Use the main.py function to filter valid emails
+            valid_emails = main.filter_valid_emails(self.df, column_name)
+            
+            # Update the current dataframe
+            self.df = valid_emails
+            self.row_count = valid_emails.shape[0]
+            
+            # Calculate removed rows
+            removed_count = before_count - self.row_count
+            
+            progress_dialog.set_progress(80)
+            progress_dialog.set_message("Updating results view...")
+            QApplication.processEvents()
+            
+            # Store operation in history
+            op_description = f"Removed {removed_count} rows with invalid emails in column '{column_name}'"
+            self.operations_history.append(op_description)
+            
+            # Update results frame
+            self.results_frame.update_history(self.operations_history)
+            self.results_frame.update_preview(self.df)
+            self.results_frame.update_status(op_description)
+            self.results_frame.update_title("Processed Data Preview")
+            self.results_frame.enable_buttons(reset=True, download=True, undo=True)
+            
+            progress_dialog.set_progress(100)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error validating emails: {str(e)}")
+        finally:
+            progress_dialog.close()
+            
+    def undo_last_operation(self):
+        """Undo the last operation"""
+        if not self.operations_history:
+            QMessageBox.information(self, "Info", "No operations to undo")
+            return
+            
+        # Get the last operation
+        last_op = self.operations_history.pop()
+        
+        # If we have operations history but no saved states, create one for original
+        if self.operation_states and len(self.operations_history) >= len(self.operation_states):
+            # This shouldn't normally happen, but just in case
+            self.operation_states.insert(0, self.original_df.clone())
+        
+        # If there are no operations left, restore original dataframe
+        if not self.operations_history:
+            self.df = self.original_df.clone()
+            self.results_frame.update_status(f"Undid operation: {last_op}")
+            self.results_frame.update_title("Original Data Preview")
+            self.results_frame.enable_buttons(reset=False, download=False, undo=False)
+        else:
+            # Get the previous dataframe state
+            self.df = self.operation_states.pop()
+            self.results_frame.update_status(f"Undid operation: {last_op}")
+            self.results_frame.update_title("Processed Data Preview")
+            self.results_frame.enable_buttons(reset=True, download=True, undo=True)
+        
+        # Update the UI
+        self.results_frame.update_history(self.operations_history)
+        self.results_frame.update_preview(self.df)

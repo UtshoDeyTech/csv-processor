@@ -38,6 +38,12 @@ class ResultsFrame(QFrame):
         self.reset_button.clicked.connect(self.reset_to_original)
         self.reset_button.setEnabled(False)
         
+        # Add undo button
+        self.undo_button = QPushButton("Undo Last Operation")
+        self.undo_button.setObjectName("undo_button")
+        self.undo_button.clicked.connect(self.undo_last_operation)
+        self.undo_button.setEnabled(False)
+        
         self.status_label = QLabel("No operation performed yet")
         self.status_label.setObjectName("status_label")
         
@@ -46,6 +52,7 @@ class ResultsFrame(QFrame):
         self.download_button.setEnabled(False)
         
         header_right.addWidget(self.reset_button)
+        header_right.addWidget(self.undo_button)
         header_right.addWidget(self.status_label)
         header_right.addWidget(self.download_button)
         
@@ -95,10 +102,11 @@ class ResultsFrame(QFrame):
         """Update the results title"""
         self.results_title.setText(title_text)
     
-    def enable_buttons(self, reset=True, download=True):
+    def enable_buttons(self, reset=True, download=True, undo=False):
         """Enable or disable action buttons"""
         self.reset_button.setEnabled(reset)
         self.download_button.setEnabled(download)
+        self.undo_button.setEnabled(undo)
     
     def reset_to_original(self):
         """Call parent's reset method"""
@@ -109,3 +117,8 @@ class ResultsFrame(QFrame):
         """Call parent's download method"""
         if hasattr(self.parent, 'download_result_data') and callable(self.parent.download_result_data):
             self.parent.download_result_data()
+            
+    def undo_last_operation(self):
+        """Call parent's undo method"""
+        if hasattr(self.parent, 'undo_last_operation') and callable(self.parent.undo_last_operation):
+            self.parent.undo_last_operation()

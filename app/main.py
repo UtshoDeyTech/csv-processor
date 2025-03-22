@@ -49,3 +49,21 @@ def find_and_replace(df, column_name, old_value, new_value):
         )
     
     return df
+
+def filter_valid_emails(df, column_name):
+    """Filter dataframe to keep only rows with valid email formats
+    
+    Args:
+        df (polars.DataFrame): Input dataframe
+        column_name (str): Name of the column containing email addresses
+        
+    Returns:
+        polars.DataFrame: Filtered dataframe with only valid emails
+    """
+    # Regular expression for basic email validation
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    # Filter rows with valid emails
+    return df.filter(
+        pl.col(column_name).cast(str).str.contains(email_regex)
+    )
