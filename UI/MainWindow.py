@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QResizeEvent
 import main  # Import the original main.py functionality
 from styles import STYLESHEET
-from UI.PolarsTable import PolarsTableModel
+from UI.PolarsTableModel import PolarsTableModel
 from UI.ProcessingDialog import ProcessingDialog
 
 
