@@ -1,6 +1,6 @@
 import os
 import polars as pl
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout,
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QFrame,
                              QWidget, QTabWidget, QMessageBox, QFileDialog)
 from PyQt5.QtGui import QResizeEvent
 
@@ -61,8 +61,14 @@ class MainWindow(QMainWindow):
         self.header_frame = HeaderFrame(self)
         main_layout.addWidget(self.header_frame)
         
-        # Main content with tabs and data view
-        content_layout = QVBoxLayout()
+        # Create a split layout for the main content
+        split_layout = QHBoxLayout()
+        split_layout.setSpacing(15)  # Add space between panels
+        
+        # Left side - Operations panel
+        operations_panel = QWidget()
+        operations_layout = QVBoxLayout(operations_panel)
+        operations_layout.setContentsMargins(0, 0, 0, 0)
         
         # Tab widget for operations
         self.tab_widget = QTabWidget()
@@ -79,17 +85,29 @@ class MainWindow(QMainWindow):
         self.find_replace_tab = FindReplaceTab(self)
         self.tab_widget.addTab(self.find_replace_tab, "Find and Replace")
         
+        # Email Validation Tab
         self.email_validation_tab = EmailValidationTab(self)
         self.tab_widget.addTab(self.email_validation_tab, "Unformatted Email")
         
-        content_layout.addWidget(self.tab_widget)
+        operations_layout.addWidget(self.tab_widget)
         
-        # Results area
+        # Right side - Results panel with border and styling
+        results_container = QFrame()
+        results_container.setFrameShape(QFrame.StyledPanel)
+        results_container.setObjectName("results_container")
+        results_container_layout = QVBoxLayout(results_container)
+        results_container_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Add results frame to container
         self.results_frame = ResultsFrame(self)
-        content_layout.addWidget(self.results_frame)
+        results_container_layout.addWidget(self.results_frame)
         
-        # Add the content layout to the main layout
-        main_layout.addLayout(content_layout)
+        # Add both panels to the split layout
+        split_layout.addWidget(operations_panel, 40)  # Left panel 40% width
+        split_layout.addWidget(results_container, 60)  # Right panel 60% width
+        
+        # Add the split layout to the main layout
+        main_layout.addLayout(split_layout)
 
     def resizeEvent(self, event: QResizeEvent):
         """Handle window resize events to adjust the UI for responsiveness"""

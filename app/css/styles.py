@@ -324,4 +324,46 @@ QDialog#column_export_dialog QPushButton#export_btn {
     background-color: #4285f4;
     color: white;
 }
+
+# Add these styles to your existing STYLESHEET string
+
+/* Split layout styling */
+#results_container {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+}
+
+/* Adjust tab width for side panel */
+QTabBar::tab {
+    min-width: 100px;
+}
+
+/* Make sure results frame fills its container */
+#results_frame {
+    background-color: transparent;
+    border: none;
+}
+
+/* Style the data preview header */
+#data_preview_header {
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+/* Adjust button bar in results frame */
+#button_bar {
+    margin: 10px 0;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    padding: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    QTabBar::tab {
+        min-width: 80px;
+        padding: 8px 12px;
+    }
+}
 """

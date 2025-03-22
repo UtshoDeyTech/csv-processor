@@ -6,58 +6,63 @@ class ResultsFrame(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-        self.setFrameShape(QFrame.StyledPanel)
+        self.setFrameShape(QFrame.NoFrame)  # No frame as container has frame
+        self.setObjectName("results_frame")
         self.table_model = PolarsTableModel()
         self.setup_ui()
     
     def setup_ui(self):
         result_layout = QVBoxLayout(self)
+        result_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins to fit in container
         
-        # Results header with operations history and reset button
-        results_header = QHBoxLayout()
+        # Header with title
+        header = QFrame()
+        header.setObjectName("data_preview_header")
+        header_layout = QVBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 5)
         
-        # Left side with title
-        header_left = QVBoxLayout()
-        self.results_title = QLabel("Filtered Data Preview")
+        self.results_title = QLabel("Data Preview")
         self.results_title.setObjectName("results_title")
-        header_left.addWidget(self.results_title)
+        header_layout.addWidget(self.results_title)
         
-        # Operations history below title
+        # Operations history
         self.history_label = QLabel("Operations: None")
         self.history_label.setObjectName("history_label")
-        header_left.addWidget(self.history_label)
+        header_layout.addWidget(self.history_label)
         
-        results_header.addLayout(header_left)
-        results_header.addStretch()
+        result_layout.addWidget(header)
         
-        # Right side with action buttons
-        header_right = QHBoxLayout()
+        # Action buttons in a styled bar
+        button_bar = QFrame()
+        button_bar.setObjectName("button_bar")
+        button_layout = QHBoxLayout(button_bar)
+        button_layout.setContentsMargins(5, 0, 5, 0)
         
         self.reset_button = QPushButton("Reset to Original")
         self.reset_button.setObjectName("reset_button")
         self.reset_button.clicked.connect(self.reset_to_original)
         self.reset_button.setEnabled(False)
         
-        # Add undo button
         self.undo_button = QPushButton("Undo Last Operation")
         self.undo_button.setObjectName("undo_button")
         self.undo_button.clicked.connect(self.undo_last_operation)
         self.undo_button.setEnabled(False)
         
-        self.status_label = QLabel("No operation performed yet")
-        self.status_label.setObjectName("status_label")
-        
         self.download_button = QPushButton("Download Result")
+        self.download_button.setObjectName("download_button")
         self.download_button.clicked.connect(self.download_result)
         self.download_button.setEnabled(False)
         
-        header_right.addWidget(self.reset_button)
-        header_right.addWidget(self.undo_button)
-        header_right.addWidget(self.status_label)
-        header_right.addWidget(self.download_button)
+        self.status_label = QLabel("No operation performed yet")
+        self.status_label.setObjectName("status_label")
         
-        results_header.addLayout(header_right)
-        result_layout.addLayout(results_header)
+        button_layout.addWidget(self.reset_button)
+        button_layout.addWidget(self.undo_button)
+        button_layout.addStretch()
+        button_layout.addWidget(self.status_label)
+        button_layout.addWidget(self.download_button)
+        
+        result_layout.addWidget(button_bar)
         
         # Table view for data
         self.table_view = QTableView()
@@ -117,7 +122,7 @@ class ResultsFrame(QFrame):
         """Call parent's download method"""
         if hasattr(self.parent, 'download_result_data') and callable(self.parent.download_result_data):
             self.parent.download_result_data()
-            
+    
     def undo_last_operation(self):
         """Call parent's undo method"""
         if hasattr(self.parent, 'undo_last_operation') and callable(self.parent.undo_last_operation):
