@@ -1,0 +1,14 @@
+email,website,extracted_domain,website_domain,similarity
+john.smith@acmetech.com,www.acmetech.com,acmetech.com,acmetech.com,1.0
+jane.doe@cloudserve.io,cloudserve.io,cloudserve.io,cloudserve.io,1.0
+dave@nexuscorp.com,nexuscorp.com,nexuscorp.com,nexuscorp.com,1.0
+sarah.miller@techinnovate.com,tech-innovate.com,techinnovate.com,tech-innovate.com,0.9696969696969697
+rob@webfusion.net,webfusion.net,webfusion.net,webfusion.net,1.0
+jennifer.g@datastream.io,www.datastream.io,datastream.io,datastream.io,1.0
+kevin.lee@focusapp.com,focusapp.com,focusapp.com,focusapp.com,1.0
+michelle@skynet-global.com,skynetglobal.com,skynet-global.com,skynetglobal.com,0.9696969696969697
+elizabeth@pixelwave.design,pixelwave.design,pixelwave.design,pixelwave.design,1.0
+patricia@greenmountain.eco,greenmountain.eco,greenmountain.eco,greenmountain.eco,1.0
+rich@rapidgrowth.biz,rapidgrowth.biz,rapidgrowth.biz,rapidgrowth.biz,1.0
+b.white@globalhealth.org,global-health.org,globalhealth.org,global-health.org,0.9696969696969697
+susan.t@universalbank.finance,universalbank.finance,universalbank.finance,universalbank.finance,1.0

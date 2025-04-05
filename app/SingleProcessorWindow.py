@@ -1,7 +1,8 @@
 import os
 import polars as pl
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QFrame,
-                             QWidget, QTabWidget, QMessageBox, QFileDialog)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QFrame,
+                             QWidget, QTabWidget, QMessageBox, QFileDialog, QSplitter)
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QResizeEvent
 
 import app.main as main  # Import the original main.py functionality
@@ -13,8 +14,10 @@ from app.components.WordMatchTab import WordMatchTab
 from app.components.DuplicateTab import DuplicateTab
 from app.components.FindReplaceTab import FindReplaceTab
 from app.components.EmailValidationTab import EmailValidationTab
+from app.components.DomainSimilarityTab import DomainSimilarityTab
 from app.components.ResultsFrame import ResultsFrame
 from app.dialogs.ExportDialog import ExportDialog
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -45,6 +48,7 @@ class MainWindow(QMainWindow):
         self.duplicate_tab = None
         self.find_replace_tab = None
         self.results_frame = None
+        self.splitter = None  # Add splitter as class attribute
         
         # Initialize UI
         self.init_ui()
@@ -61,9 +65,8 @@ class MainWindow(QMainWindow):
         self.header_frame = HeaderFrame(self)
         main_layout.addWidget(self.header_frame)
         
-        # Create a split layout for the main content
-        split_layout = QHBoxLayout()
-        split_layout.setSpacing(15)  # Add space between panels
+        # Create a splitter for the main content (better than QHBoxLayout for maintaining proportions)
+        self.splitter = QSplitter(Qt.Horizontal)
         
         # Left side - Operations panel
         operations_panel = QWidget()
@@ -89,6 +92,10 @@ class MainWindow(QMainWindow):
         self.email_validation_tab = EmailValidationTab(self)
         self.tab_widget.addTab(self.email_validation_tab, "Unformatted Email")
         
+        # Domain Similarity Tab
+        self.domain_similarity_tab = DomainSimilarityTab(self)
+        self.tab_widget.addTab(self.domain_similarity_tab, "Domain Similarity")
+        
         operations_layout.addWidget(self.tab_widget)
         
         # Right side - Results panel with border and styling
@@ -102,13 +109,24 @@ class MainWindow(QMainWindow):
         self.results_frame = ResultsFrame(self)
         results_container_layout.addWidget(self.results_frame)
         
-        # Add both panels to the split layout
-        split_layout.addWidget(operations_panel, 40)  # Left panel 40% width
-        split_layout.addWidget(results_container, 60)  # Right panel 60% width
+        # Add both panels to the splitter
+        self.splitter.addWidget(operations_panel)
+        self.splitter.addWidget(results_container)
         
-        # Add the split layout to the main layout
-        main_layout.addLayout(split_layout)
-
+        # Set initial sizes (60% for operations, 40% for results)
+        self.splitter.setSizes([60, 40])
+        
+        # Add the splitter to the main layout
+        main_layout.addWidget(self.splitter)
+        
+        # Set stretch factor to maintain proportions
+        self.reset_splitter_sizes()
+    
+    def reset_splitter_sizes(self):
+        """Reset splitter to the original 60/40 proportion"""
+        total_width = self.splitter.width()
+        self.splitter.setSizes([int(total_width * 0.6), int(total_width * 0.4)])
+    
     def resizeEvent(self, event: QResizeEvent):
         """Handle window resize events to adjust the UI for responsiveness"""
         super().resizeEvent(event)
@@ -144,6 +162,9 @@ class MainWindow(QMainWindow):
         # Adjust table columns
         if hasattr(self, 'results_frame') and self.results_frame and hasattr(self.results_frame, 'table_view'):
             self.results_frame.table_view.resizeColumnsToContents()
+        
+        # Reset splitter sizes to maintain proportions on resize
+        self.reset_splitter_sizes()
     
     def load_csv_file(self, file_path):
         """Load CSV file and setup UI with data"""
@@ -174,6 +195,7 @@ class MainWindow(QMainWindow):
                 self.duplicate_tab.update_columns(self.df.columns)
                 self.find_replace_tab.update_columns(self.df.columns)
                 self.email_validation_tab.update_columns(self.df.columns)
+                self.domain_similarity_tab.update_columns(self.df.columns)
                 
                 # Update results frame
                 self.results_frame.update_preview(self.df)
@@ -187,6 +209,8 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to load CSV file: {str(e)}")
         finally:
             progress_dialog.close()
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
     
     def apply_word_match_filter(self, selected_column_names, search_text, include, case_insensitive):
         """Apply word match filter to the data"""
@@ -276,6 +300,8 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error applying word match: {str(e)}")
         finally:
             progress_dialog.close()
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
     
     def apply_remove_duplicates_filter(self, selected_column_names):
         """Apply duplicate removal filter to the data"""
@@ -340,6 +366,8 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error removing duplicates: {str(e)}")
         finally:
             progress_dialog.close()
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
     
     def apply_find_replace_filter(self, column_name, old_value, new_value):
         """Apply find and replace to the data"""
@@ -425,74 +453,9 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error applying find and replace: {str(e)}")
         finally:
             progress_dialog.close()
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
     
-    def reset_to_original_data(self):
-        """Reset to original data"""
-        if self.original_df is not None:
-            # Reset to original data
-            self.df = self.original_df.clone()
-            self.row_count = self.df.shape[0]
-            
-            # Clear operations history and states
-            self.operations_history = []
-            self.operation_states = []
-            
-            # Update results frame
-            self.results_frame.update_history(self.operations_history)
-            self.results_frame.update_preview(self.df)
-            self.results_frame.update_status("Reset to original data")
-            self.results_frame.update_title("Original Data Preview")
-            self.results_frame.enable_buttons(reset=False, download=False, undo=False)
-    
-    def download_result_data(self):
-        """Export filtered data to CSV file"""
-        if self.df is None:
-            QMessageBox.warning(self, "Warning", "No results to download")
-            return
-        
-        # Create column selection dialog
-        export_dialog = ExportDialog(self, self.df.columns)
-        
-        # Show dialog
-        if export_dialog.exec_() != export_dialog.Accepted:
-            return
-        
-        # Get selected columns
-        selected_columns = export_dialog.get_selected_columns()
-        
-        if not selected_columns:
-            QMessageBox.warning(self, "Warning", "Please select at least one column to export")
-            return
-        
-        # Get file path
-        suggested_name = os.path.splitext(os.path.basename(self.csv_file))[0] + "_processed.csv"
-        save_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", suggested_name, "CSV Files (*.csv)")
-        if not save_path:
-            return
-            
-        # Show processing dialog
-        progress_dialog = ProcessingDialog(self, "Saving CSV file, please wait...")
-        progress_dialog.set_progress(30)
-        progress_dialog.show()
-        QApplication.processEvents()
-        
-        try:
-            # Export only selected columns
-            export_df = self.df.select(selected_columns)
-            export_df.write_csv(save_path)
-            
-            progress_dialog.set_progress(100)
-            progress_dialog.close()
-            
-            QMessageBox.information(
-                self, 
-                "Success", 
-                f"File saved successfully to:\n{save_path}\n\nRows: {export_df.shape[0]}\nColumns: {len(selected_columns)}"
-            )
-        except Exception as e:
-            progress_dialog.close()
-            QMessageBox.critical(self, "Error", f"Error saving file: {str(e)}")
-            
     def apply_email_validation_filter(self, column_name):
         """Remove rows with invalid email formats"""
         if self.df is None:
@@ -551,6 +514,137 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error validating emails: {str(e)}")
         finally:
             progress_dialog.close()
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
+            
+    def apply_domain_similarity_filter(self, email_column, domain_column, threshold=0.75, check_username=True):
+        """Apply domain similarity filter to the data"""
+        if self.df is None:
+            QMessageBox.warning(self, "Warning", "Please load a CSV file first")
+            return
+        
+        if not email_column or not domain_column:
+            QMessageBox.warning(self, "Warning", "Please select both email and domain columns")
+            return
+        
+        # Show processing dialog
+        progress_dialog = ProcessingDialog(self, "Analyzing domain similarity, please wait...")
+        progress_dialog.set_progress(0)
+        progress_dialog.show()
+        QApplication.processEvents()
+        
+        try:
+            # Save the current state for undo
+            self.operation_states.append(self.df.clone())
+            
+            # Define progress callback
+            def update_progress(percent, message):
+                progress_dialog.set_progress(percent)
+                progress_dialog.set_message(message)
+                QApplication.processEvents()
+                
+            # Apply domain similarity filter with progress updates
+            filtered_df = main.domain_similarity_filter(
+                self.df, 
+                email_column, 
+                domain_column, 
+                threshold,
+                check_username,
+                update_progress
+            )
+            
+            # Update the current dataframe
+            self.df = filtered_df
+            self.row_count = filtered_df.shape[0]
+            
+            # Store operation in history
+            check_username_str = "checked email usernames" if check_username else "checked domains only"
+            op_description = f"Found {self.row_count} emails with {int(threshold*100)}% domain similarity ({check_username_str})"
+            self.operations_history.append(op_description)
+            
+            # Update results frame
+            self.results_frame.update_history(self.operations_history)
+            self.results_frame.update_preview(self.df)
+            self.results_frame.update_status(f"Found {self.row_count} emails with domain similarity >= {int(threshold*100)}%")
+            self.results_frame.update_title("Domain Similarity Results")
+            self.results_frame.enable_buttons(reset=True, download=True, undo=True)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error analyzing domain similarity: {str(e)}")
+        finally:
+            progress_dialog.close()
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
+    
+    def reset_to_original_data(self):
+        """Reset to original data"""
+        if self.original_df is not None:
+            # Reset to original data
+            self.df = self.original_df.clone()
+            self.row_count = self.df.shape[0]
+            
+            # Clear operations history and states
+            self.operations_history = []
+            self.operation_states = []
+            
+            # Update results frame
+            self.results_frame.update_history(self.operations_history)
+            self.results_frame.update_preview(self.df)
+            self.results_frame.update_status("Reset to original data")
+            self.results_frame.update_title("Original Data Preview")
+            self.results_frame.enable_buttons(reset=False, download=False, undo=False)
+            
+            # Reset splitter proportions
+            self.reset_splitter_sizes()
+    
+    def download_result_data(self):
+        """Export filtered data to CSV file"""
+        if self.df is None:
+            QMessageBox.warning(self, "Warning", "No results to download")
+            return
+        
+        # Create column selection dialog
+        export_dialog = ExportDialog(self, self.df.columns)
+        
+        # Show dialog
+        if export_dialog.exec_() != export_dialog.Accepted:
+            return
+        
+        # Get selected columns
+        selected_columns = export_dialog.get_selected_columns()
+        
+        if not selected_columns:
+            QMessageBox.warning(self, "Warning", "Please select at least one column to export")
+            return
+        
+        # Get file path
+        suggested_name = os.path.splitext(os.path.basename(self.csv_file))[0] + "_processed.csv"
+        save_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", suggested_name, "CSV Files (*.csv)")
+        if not save_path:
+            return
+            
+        # Show processing dialog
+        progress_dialog = ProcessingDialog(self, "Saving CSV file, please wait...")
+        progress_dialog.set_progress(30)
+        progress_dialog.show()
+        QApplication.processEvents()
+        
+        try:
+            # Export only selected columns
+            export_df = self.df.select(selected_columns)
+            export_df.write_csv(save_path)
+            
+            progress_dialog.set_progress(100)
+            progress_dialog.close()
+            
+            QMessageBox.information(
+                self, 
+                "Success", 
+                f"File saved successfully to:\n{save_path}\n\nRows: {export_df.shape[0]}\nColumns: {len(selected_columns)}"
+            )
+        except Exception as e:
+            progress_dialog.close()
+            QMessageBox.critical(self, "Error", f"Error saving file: {str(e)}")
             
     def undo_last_operation(self):
         """Undo the last operation"""
@@ -582,3 +676,6 @@ class MainWindow(QMainWindow):
         # Update the UI
         self.results_frame.update_history(self.operations_history)
         self.results_frame.update_preview(self.df)
+        
+        # Reset splitter proportions
+        self.reset_splitter_sizes()

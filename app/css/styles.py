@@ -239,7 +239,7 @@ QRadioButton::indicator:checked, QCheckBox::indicator:checked {
     background-color: #e0e0e0;
 }
 
-#apply_word_match_button, #apply_dup_button, #apply_fr_button {
+#apply_word_match_button, #apply_dup_button, #apply_fr_button, #primary_button {
     min-width: 150px;
 }
 
@@ -325,8 +325,6 @@ QDialog#column_export_dialog QPushButton#export_btn {
     color: white;
 }
 
-# Add these styles to your existing STYLESHEET string
-
 /* Split layout styling */
 #results_container {
     background-color: white;
@@ -357,6 +355,51 @@ QTabBar::tab {
     background-color: #f8f9fa;
     border-radius: 3px;
     padding: 8px;
+}
+
+/* Description labels */
+#description_label {
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+/* Custom styles for slider */
+QSlider::groove:horizontal {
+    height: 8px;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: #4285f4;
+    border: 1px solid #4285f4;
+    width: 18px;
+    margin: -6px 0;
+    border-radius: 9px;
+}
+
+QSlider::add-page:horizontal {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:horizontal {
+    background: #4285f4;
+    border-radius: 4px;
+}
+
+/* Error dialog styling */
+QMessageBox {
+    background-color: white;
+}
+
+QMessageBox QLabel {
+    color: #333333;
+}
+
+QMessageBox#error {
+    color: #d32f2f;
 }
 
 /* Responsive adjustments */
